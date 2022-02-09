@@ -254,7 +254,16 @@ class RawPage(BasePage, Layout):
         close_section(current_num_col, lines, y_ref)
 
         return sections
-
+    
+    def clean_chars(self, raw_layout):
+        for block in raw_layout.get('blocks', []):
+            lines = block.get('lines', [])
+            for line in lines:
+                for span in line.get('spans', []):
+                    for char in span.get('chars', []):
+                        if char['c'] in {'\t', '\r', '\xa0'}:
+                            char['c'] = ''
+        return raw_layout
 
     def extract_raw_dict(self, **settings):
         '''Extract source data from page by ``PyMuPDF``.'''
@@ -264,7 +273,7 @@ class RawPage(BasePage, Layout):
         # NOTE: all these coordinates are relative to un-rotated page
         # https://pymupdf.readthedocs.io/en/latest/page.html#modifying-pages
         raw_layout = self.fitz_page.get_text('rawdict')
-
+        raw_layout = self.clean_chars(raw_layout)
         # page size: though 'width', 'height' are contained in `raw_dict`, 
         # they are based on un-rotated page. So, update page width/height 
         # to right direction in case page is rotated
